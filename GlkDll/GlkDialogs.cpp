@@ -1006,7 +1006,7 @@ BOOL CAboutDialog::OnInitDialog()
   CString about;
   ctrl->GetWindowText(about);
   about.Replace("%glk%","0.7.6");
-  about.Replace("%winglk%","1.54");
+  about.Replace("%winglk%","1.55");
   ctrl->SetWindowText(about);
 
   ctrl = GetDlgItem(IDC_ADDITION_TEXT);
