@@ -563,6 +563,11 @@ for resource number 1):
     <td>mus1.ogg</td>
   </tr>
   <tr>
+    <td nowrap>MP3</td>
+    <td nowrap>music</td>
+    <td>mus1.mp3</td>
+  </tr>
+  <tr>
     <td nowrap>text</td>
     <td nowrap>data</td>
     <td>data1.txt</td>
@@ -594,10 +599,20 @@ jpeglib by the Independent JPEG Group.<br>
 libpng by Guy Eric Schalnat, Andreas Dilger, Glenn Randers-Pehrson, and others.<br>
 zlib by Jean-loup Gailly and Mark Adler.<br>
 libogg and libvorbis by the Xiph.org Foundation.<br>
-ModPlug by Olivier Lapicque.
+ModPlug by Olivier Lapicque.<br>
+minimp3 by lieff.
 </blockquote>
 
 <h2><a name="History"></a>Release History</h2>
+
+<h3>1.55</h3>
+
+<ul>
+
+<li>Added support for MP3 music resources, following the addition of MP3 to the Blorb specification.
+Decoding MP3 music is implemented using the minimp3 decoder library.
+
+</ul>
 
 <h3>1.54</h3>
 

@@ -10,6 +10,7 @@
 #include "StdAfx.h"
 #include "GlkSoundAIFF.h"
 #include "GlkSoundMOD.h"
+#include "GlkSoundMP3.h"
 #include "GlkSoundOGG.h"
 #include "GlkSoundSONG.h"
 
@@ -92,6 +93,7 @@ void CWinGlkSoundLoader::InitLoaders(void)
 {
   m_Loaders.Add(new CWinGlkAIFFSoundLoader());
   m_Loaders.Add(new CWinGlkOGGSoundLoader());
+  m_Loaders.Add(new CWinGlkMP3SoundLoader());
   m_Loaders.Add(new CWinGlkMODSoundLoader());
 #ifndef I7GLK
   m_Loaders.Add(new CWinGlkSONGSoundLoader());

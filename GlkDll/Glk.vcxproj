@@ -873,6 +873,10 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Include;..\..\..\Libraries\mfc;..\..\..\Libraries\libmodplug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Include;..\..\..\Libraries\mfc;..\..\..\Libraries\libmodplug;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="GlkSoundMP3.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Include;..\..\..\Libraries\mfc;..\..\..\Libraries\minimp3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Include;..\..\..\Libraries\mfc;..\..\..\Libraries\minimp3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="GlkSoundOGG.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Include;..\..\..\Libraries\mfc;..\..\..\Libraries\libogg\include;..\..\..\Libraries\libvorbis\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Include;..\..\..\Libraries\mfc;..\..\..\Libraries\libogg\include;..\..\..\Libraries\libvorbis\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -955,6 +959,7 @@
     <ClInclude Include="GlkSound.h" />
     <ClInclude Include="GlkSoundAIFF.h" />
     <ClInclude Include="GlkSoundMOD.h" />
+    <ClInclude Include="GlkSoundMP3.h" />
     <ClInclude Include="GlkSoundOGG.h" />
     <ClInclude Include="GlkSoundSONG.h" />
     <ClInclude Include="GlkStream.h" />

@@ -370,6 +370,9 @@
     <ClCompile Include="..\..\..\Libraries\mfc\DarkMode.cpp">
       <Filter>Libraries\MFC</Filter>
     </ClCompile>
+    <ClCompile Include="GlkSoundMP3.cpp">
+      <Filter>Windows Glk\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GlkDialogs.h">
@@ -488,6 +491,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Libraries\mfc\DarkMode.h">
       <Filter>Libraries\MFC</Filter>
+    </ClInclude>
+    <ClInclude Include="GlkSoundMP3.h">
+      <Filter>Windows Glk\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

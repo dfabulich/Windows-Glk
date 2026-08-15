@@ -38,6 +38,10 @@ Unpack the archive and copy the contents of the top-level directory directory to
 
 Download the latest stable versions of libogg and libvorbis from https://xiph.org/downloads/. Unpack the libogg archive and copy the contents of the top-level directory to "\<root>/Libraries/libogg". Unpack the libvorbis archive and copy the contents of the top-level directory to "\<root>/Libraries/libvorbis".
 
+#### minimp3
+
+Download the source code of minimp3 from https://github.com/lieff/minimp3/. Copy the source code to "\<root>/Libraries/minimp3".
+
 ### Compiling the project
 
 Start Visual Studio, open the solution "\<root>/Adv/Glk/GlkDll/Glk.sln", then build the "Glk" project.

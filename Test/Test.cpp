@@ -368,7 +368,7 @@ void test_sound_multi(void)
     glk_put_string("Invalid channel\n");
     return;
   }
-  resources[0] = get_number("Enter second sound resource number: ");
+  resources[0] = get_number("Enter first sound resource number: ");
 
   int channel2 = get_number("Enter second channel (0 or 1): ");
   if ((channel2 < 0) || (channel2 > 1))
