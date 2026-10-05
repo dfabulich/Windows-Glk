@@ -910,9 +910,12 @@ bool FirstInstalled(const char* const* Names, int iCount, CString& Face)
 
 } // namespace
 
-bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, bool& bMonospace)
+bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, LONG& Weight, BYTE& Italic,
+  bool& bBlorb)
 {
   CGlkApp* pApp = (CGlkApp*)AfxGetApp();
+  WinGlkBlorbFonts::Load();
+  bBlorb = false;
 
   int iPos = 0;
   while (iPos >= 0)
@@ -933,10 +936,22 @@ bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, bool& bMonos
     CString Lower(Name);
     Lower.MakeLower();
 
+    // Blorb families take precedence over installed fonts
+    int iWeight = (Weight == FW_DONTCARE) ? FW_NORMAL : Weight;
+    bool bItalic = (Italic != 0);
+    const CWinGlkBlorbFace* pMatch = WinGlkBlorbFonts::Match(Lower,iWeight,bItalic);
+    if (pMatch != NULL)
+    {
+      Face = WinGlkBlorbFonts::GetGdiFont(pMatch,iWeight,bItalic);
+      Weight = iWeight;
+      Italic = bItalic ? TRUE : FALSE;
+      bBlorb = true;
+      return true;
+    }
+
     if (Lower == "monospace")
     {
       Face = pApp->GetFixedFontName();
-      bMonospace = true;
       return true;
     }
     if (Lower == "serif")
@@ -947,7 +962,6 @@ bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, bool& bMonos
         Face = pApp->GetPropFontName();
       else if (!FirstInstalled(Serifs,sizeof Serifs / sizeof Serifs[0],Face))
         Face = pApp->GetPropFontName();
-      bMonospace = false;
       return true;
     }
     if (Lower == "sans-serif")
@@ -958,7 +972,6 @@ bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, bool& bMonos
         Face = pApp->GetPropFontName();
       else if (!FirstInstalled(Sans,sizeof Sans / sizeof Sans[0],Face))
         Face = pApp->GetPropFontName();
-      bMonospace = false;
       return true;
     }
 
@@ -975,7 +988,6 @@ bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, bool& bMonos
     if (pFont->m_bFound)
     {
       Face = pFont->m_Face;
-      bMonospace = ((pFont->m_PitchAndFamily & 0x03) == FIXED_PITCH);
       return true;
     }
   }

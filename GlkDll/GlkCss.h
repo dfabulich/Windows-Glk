@@ -15,6 +15,7 @@ extern "C"
 #include "glk.h"
 }
 #include "WinGlk.h"
+#include "GlkBlorbFonts.h"
 
 #include <map>
 #include <string>
@@ -142,8 +143,10 @@ namespace WinGlkCss
 
   bool Supports(const std::string& prop, const std::string& val);
 
-  // Map a CSS font-family list onto an installed font
-  bool ResolveFamily(const CString& Family, CString& Face, bool& bMonospace);
+  // Map a CSS font-family list onto a Blorb or installed font. The weight and italic
+  // flag are the requested values on input, and are updated for the chosen face.
+  bool ResolveFamily(const CString& Family, CString& Face, LONG& Weight, BYTE& Italic,
+    bool& bBlorb);
 
   // Composite a CSS colour onto an opaque background
   COLORREF Blend(DWORD Colour, COLORREF Under);

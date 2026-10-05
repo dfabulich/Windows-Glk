@@ -832,6 +832,10 @@
       </PrecompiledHeader>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
+    <ClCompile Include="GlkBlorbFonts.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="GlkCss.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Include;..\..\..\Libraries\mfc</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Include;..\..\..\Libraries\mfc</AdditionalIncludeDirectories>
@@ -953,6 +957,7 @@
     <ClInclude Include="..\Include\glk.h" />
     <ClInclude Include="..\Include\WinGlk.h" />
     <ClInclude Include="GlkDialogs.h" />
+    <ClInclude Include="GlkBlorbFonts.h" />
     <ClInclude Include="GlkCss.h" />
     <ClInclude Include="GlkDll.h" />
     <ClInclude Include="GlkFileRef.h" />

@@ -328,6 +328,9 @@ public:
   double m_dFontPixels;
 
 protected:
+  // Font linking cannot get code pages for private Blorb fonts, so is not used for them
+  bool m_bBlorbFont;
+
   std::map<CString,CFont*> m_Fonts;
   bool m_bHasBaseBack;
   COLORREF m_BaseBack;

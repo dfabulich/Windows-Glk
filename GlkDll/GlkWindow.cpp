@@ -1207,6 +1207,7 @@ CWinGlkDC::CWinGlkDC(CWinGlkWnd* pWnd) : m_Display(style_Normal,0,NULL)
   m_bReversed = false;
   m_bSpanBorder = false;
   m_dFontPixels = 0.0;
+  m_bBlorbFont = false;
   m_bHasBaseBack = false;
   m_BaseBack = 0;
 }
@@ -1301,6 +1302,7 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
   Css.Overlay(RunCss);
 
   CString name = GetFontName();
+  m_bBlorbFont = false;
 
   LOGFONT TextLogFont = { 0 };
   SetFontStyles(TextLogFont);
@@ -1340,8 +1342,8 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
     if (!Css.m_Family.IsEmpty())
     {
       CString face;
-      bool bMono = false;
-      if (WinGlkCss::ResolveFamily(Css.m_Family,face,bMono))
+      if (WinGlkCss::ResolveFamily(Css.m_Family,face,TextLogFont.lfWeight,TextLogFont.lfItalic,
+        m_bBlorbFont))
         name = face;
     }
   }
@@ -1377,7 +1379,6 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
 
   // Get the metrics of the currently selected font
   GetTextMetrics(&m_FontMetrics);
-
   // Set the text and background colours. The precedence, from lowest to highest, is
   // stylehints, the style's CSS hints, Gargoyle colours, then inline CSS.
   bool bDark = (dark != NULL);
@@ -1452,7 +1453,7 @@ CSize CWinGlkDC::GetTextExtent(LPCSTR lpszString, int nCount) const
 
 BOOL CWinGlkDC::TextOut(int x, int y, LPCWSTR lpszString, int nCount)
 {
-  if (UseFontSubstitution())
+  if (UseFontSubstitution() && !m_bBlorbFont)
   {
     ((CWinGlkMainWnd*)AfxGetApp()->GetMainWnd())->GetTextOut().
       TextOut(m_hDC,x,y,lpszString,nCount);
@@ -1469,7 +1470,7 @@ BOOL CWinGlkDC::TextOut(int x, int y, const CStringW& str)
 
 CSize CWinGlkDC::GetTextExtent(LPCWSTR lpszString, int nCount) const
 {
-  if (UseFontSubstitution())
+  if (UseFontSubstitution() && !m_bBlorbFont)
   {
     return ((CWinGlkMainWnd*)AfxGetApp()->GetMainWnd())->GetTextOut().
       GetTextExtent(m_hDC,lpszString,nCount);

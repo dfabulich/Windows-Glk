@@ -46,6 +46,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GlkBlorbFonts.cpp">
+      <Filter>Windows Glk\Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="GlkCss.cpp">
       <Filter>Windows Glk\Source Files</Filter>
     </ClCompile>
@@ -379,6 +382,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GlkDialogs.h">
+      <Filter>Windows Glk\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlkBlorbFonts.h">
       <Filter>Windows Glk\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlkCss.h">
