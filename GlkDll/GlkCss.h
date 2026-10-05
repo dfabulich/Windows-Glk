@@ -143,10 +143,12 @@ namespace WinGlkCss
 
   bool Supports(const std::string& prop, const std::string& val);
 
-  // Map a CSS font-family list onto a Blorb or installed font. The weight and italic
-  // flag are the requested values on input, and are updated for the chosen face.
+  // Map a CSS font-family list onto a Blorb or installed font. If a Blorb face drawn with
+  // DirectWrite is found it is returned in pBlorbFace, and Face is set from the rest of the
+  // list. Otherwise, the weight and italic flag may be updated for the chosen GDI face,
+  // and bGdiBlorb indicates whether this is a Blorb font registered with GDI.
   bool ResolveFamily(const CString& Family, CString& Face, LONG& Weight, BYTE& Italic,
-    bool& bBlorb);
+    const CWinGlkBlorbFace*& pBlorbFace, bool& bGdiBlorb);
 
   // Composite a CSS colour onto an opaque background
   COLORREF Blend(DWORD Colour, COLORREF Under);

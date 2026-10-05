@@ -1207,7 +1207,8 @@ CWinGlkDC::CWinGlkDC(CWinGlkWnd* pWnd) : m_Display(style_Normal,0,NULL)
   m_bReversed = false;
   m_bSpanBorder = false;
   m_dFontPixels = 0.0;
-  m_bBlorbFont = false;
+  m_pBlorbFont = NULL;
+  m_bGdiBlorbFont = false;
   m_bHasBaseBack = false;
   m_BaseBack = 0;
 }
@@ -1302,7 +1303,9 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
   Css.Overlay(RunCss);
 
   CString name = GetFontName();
-  m_bBlorbFont = false;
+  const CWinGlkBlorbFace* pBlorbFace = NULL;
+  m_pBlorbFont = NULL;
+  m_bGdiBlorbFont = false;
 
   LOGFONT TextLogFont = { 0 };
   SetFontStyles(TextLogFont);
@@ -1343,7 +1346,7 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
     {
       CString face;
       if (WinGlkCss::ResolveFamily(Css.m_Family,face,TextLogFont.lfWeight,TextLogFont.lfItalic,
-        m_bBlorbFont))
+        pBlorbFace,m_bGdiBlorbFont))
         name = face;
     }
   }
@@ -1379,6 +1382,14 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
 
   // Get the metrics of the currently selected font
   GetTextMetrics(&m_FontMetrics);
+  if (pBlorbFace != NULL)
+  {
+    int weight = (TextLogFont.lfWeight == FW_DONTCARE) ? FW_NORMAL : TextLogFont.lfWeight;
+    m_pBlorbFont = WinGlkBlorbFonts::GetFont(pBlorbFace,weight,TextLogFont.lfItalic != 0,
+      -TextLogFont.lfHeight,TextLogFont.lfUnderline != 0);
+    if (m_pBlorbFont != NULL)
+      WinGlkBlorbFonts::GetMetrics(m_pBlorbFont,m_FontMetrics);
+  }
   // Set the text and background colours. The precedence, from lowest to highest, is
   // stylehints, the style's CSS hints, Gargoyle colours, then inline CSS.
   bool bDark = (dark != NULL);
@@ -1441,11 +1452,21 @@ CWinGlkStyle* CWinGlkDC::GetStyleFromWindow(int iStyle)
 
 BOOL CWinGlkDC::TextOut(int x, int y, LPCSTR lpszString, int nCount)
 {
+  if (m_pBlorbFont != NULL)
+  {
+    CStringW wide(lpszString,nCount);
+    return TextOut(x,y,wide,wide.GetLength());
+  }
   return ::TextOut(m_hDC,x,y,lpszString,nCount);
 }
 
 CSize CWinGlkDC::GetTextExtent(LPCSTR lpszString, int nCount) const
 {
+  if (m_pBlorbFont != NULL)
+  {
+    CStringW wide(lpszString,nCount);
+    return GetTextExtent(wide,wide.GetLength());
+  }
   SIZE size;
   ::GetTextExtentPoint32(m_hDC,lpszString,nCount,&size);
   return size;
@@ -1453,7 +1474,12 @@ CSize CWinGlkDC::GetTextExtent(LPCSTR lpszString, int nCount) const
 
 BOOL CWinGlkDC::TextOut(int x, int y, LPCWSTR lpszString, int nCount)
 {
-  if (UseFontSubstitution() && !m_bBlorbFont)
+  if (m_pBlorbFont != NULL)
+  {
+    WinGlkBlorbFonts::TextOut(m_pBlorbFont,m_hDC,x,y,lpszString,nCount);
+    return TRUE;
+  }
+  else if (UseFontSubstitution() && !m_bGdiBlorbFont)
   {
     ((CWinGlkMainWnd*)AfxGetApp()->GetMainWnd())->GetTextOut().
       TextOut(m_hDC,x,y,lpszString,nCount);
@@ -1470,7 +1496,9 @@ BOOL CWinGlkDC::TextOut(int x, int y, const CStringW& str)
 
 CSize CWinGlkDC::GetTextExtent(LPCWSTR lpszString, int nCount) const
 {
-  if (UseFontSubstitution() && !m_bBlorbFont)
+  if (m_pBlorbFont != NULL)
+    return WinGlkBlorbFonts::GetTextExtent(m_pBlorbFont,lpszString,nCount);
+  else if (UseFontSubstitution() && !m_bGdiBlorbFont)
   {
     return ((CWinGlkMainWnd*)AfxGetApp()->GetMainWnd())->GetTextOut().
       GetTextExtent(m_hDC,lpszString,nCount);

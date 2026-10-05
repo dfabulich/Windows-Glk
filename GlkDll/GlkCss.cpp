@@ -911,11 +911,12 @@ bool FirstInstalled(const char* const* Names, int iCount, CString& Face)
 } // namespace
 
 bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, LONG& Weight, BYTE& Italic,
-  bool& bBlorb)
+  const CWinGlkBlorbFace*& pBlorbFace, bool& bGdiBlorb)
 {
   CGlkApp* pApp = (CGlkApp*)AfxGetApp();
   WinGlkBlorbFonts::Load();
-  bBlorb = false;
+  pBlorbFace = NULL;
+  bGdiBlorb = false;
 
   int iPos = 0;
   while (iPos >= 0)
@@ -936,17 +937,26 @@ bool WinGlkCss::ResolveFamily(const CString& Family, CString& Face, LONG& Weight
     CString Lower(Name);
     Lower.MakeLower();
 
-    // Blorb families take precedence over installed fonts
-    int iWeight = (Weight == FW_DONTCARE) ? FW_NORMAL : Weight;
-    bool bItalic = (Italic != 0);
-    const CWinGlkBlorbFace* pMatch = WinGlkBlorbFonts::Match(Lower,iWeight,bItalic);
-    if (pMatch != NULL)
+    // Blorb families take precedence over installed fonts. With DirectWrite, carry on
+    // to find a GDI font from the rest of the list, for the text measuring code.
+    if (pBlorbFace == NULL)
     {
-      Face = WinGlkBlorbFonts::GetGdiFont(pMatch,iWeight,bItalic);
-      Weight = iWeight;
-      Italic = bItalic ? TRUE : FALSE;
-      bBlorb = true;
-      return true;
+      int iWeight = (Weight == FW_DONTCARE) ? FW_NORMAL : Weight;
+      bool bItalic = (Italic != 0);
+      const CWinGlkBlorbFace* pMatch = WinGlkBlorbFonts::Match(Lower,iWeight,bItalic);
+      if (pMatch != NULL)
+      {
+        if (WinGlkBlorbFonts::UseDirectWrite())
+        {
+          pBlorbFace = pMatch;
+          continue;
+        }
+        Face = WinGlkBlorbFonts::GetGdiFont(pMatch,iWeight,bItalic);
+        Weight = iWeight;
+        Italic = bItalic ? TRUE : FALSE;
+        bGdiBlorb = true;
+        return true;
+      }
     }
 
     if (Lower == "monospace")

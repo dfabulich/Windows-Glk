@@ -328,8 +328,10 @@ public:
   double m_dFontPixels;
 
 protected:
-  // Font linking cannot get code pages for private Blorb fonts, so is not used for them
-  bool m_bBlorbFont;
+  // A Blorb font drawn with DirectWrite, rather than the selected GDI font
+  CWinGlkBlorbFont* m_pBlorbFont;
+  // Font linking cannot get code pages for private GDI Blorb fonts, so is not used for them
+  bool m_bGdiBlorbFont;
 
   std::map<CString,CFont*> m_Fonts;
   bool m_bHasBaseBack;
