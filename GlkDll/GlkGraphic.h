@@ -41,6 +41,7 @@ public:
   double m_ScaleWidth;
   double m_ScaleHeight;
   double m_MaxWidth;
+  bool m_bCssBorder;
 };
 
 /////////////////////////////////////////////////////////////////////////////

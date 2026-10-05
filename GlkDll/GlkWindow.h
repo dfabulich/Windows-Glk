@@ -121,7 +121,15 @@ public:
 
   virtual void Scrollback(void) {}
 
+  void CssInlineSet(glui32 target, const std::string& prop, const std::string* pVal);
+  void CssInlineClearAll(void);
+
 protected:
+  virtual void CssInlineChanged(void) {}
+
+  // Inline CSS properties, indexed by target (CSS_Window is not used)
+  CWinGlkCssProps m_CssInline[CSS_Window];
+
   glui32 m_Rock;
   gidispatch_rock_t m_DispRock;
   gidispatch_rock_t m_ArrayRock;
@@ -262,30 +270,41 @@ public:
   {
   public:
     CDisplay();
-    CDisplay(int iStyle, unsigned int iLink, const CTextColours* pColours);
+    CDisplay(int iStyle, unsigned int iLink, const CTextColours* pColours,
+      const CWinGlkCssAttrs* pCss = NULL);
     bool operator==(const CDisplay& Compare);
     bool operator!=(const CDisplay& Compare);
 
     int m_iStyle;
     unsigned int m_iLink;
     const CTextColours* m_pColours;
-    int m_iIndex;
+    const CWinGlkCssAttrs* m_pCss;
   };
 
   void SetStyle(int iStyle, unsigned int iLink, const CTextColours* pColours, DarkMode* dark);
+  void SetStyle(int iStyle, unsigned int iLink, const CTextColours* pColours,
+    const CWinGlkCssAttrs* pCss, DarkMode* dark);
   void SetDisplay(const CDisplay& Display, DarkMode* dark);
 
   CDisplay GetDisplay(void) { return m_Display; }
   int GetStyle(void) { return m_Display.m_iStyle; }
   unsigned int GetLink(void) { return m_Display.m_iLink; }
   const CTextColours* GetColours(void) { return m_Display.m_pColours; }
+  const CWinGlkCssAttrs* GetCss(void) { return m_Display.m_pCss; }
 
   CWinGlkStyle* GetStyleFromWindow(int iStyle);
+  int GetDPI(void) const;
+
+  // The colour behind text that has no background of its own
+  void SetBaseBack(bool bHasBack, COLORREF Back);
+  bool HasBaseBack(void) const { return m_bHasBaseBack; }
+  COLORREF GetBaseBack(void) const { return m_BaseBack; }
 
   virtual CString GetFontName(void) const = 0;
   virtual void SetFontStyles(LOGFONT& Font) = 0;
   virtual int GetStyleFontSize(void) const = 0;
   virtual bool UseFontSubstitution(void) const = 0;
+  virtual bool UseCss(void) const { return true; }
 
   BOOL TextOut(int x, int y, LPCSTR lpszString, int nCount);
   CSize GetTextExtent(LPCSTR lpszString, int nCount) const;
@@ -303,8 +322,15 @@ public:
   CWinGlkStyle m_Style;
   CDisplay m_Display;
 
+  // State resulting from CSS for the current display
+  bool m_bReversed;
+  bool m_bSpanBorder;
+  double m_dFontPixels;
+
 protected:
-  CFont* m_Fonts[style_NUMSTYLES * 2];
+  std::map<CString,CFont*> m_Fonts;
+  bool m_bHasBaseBack;
+  COLORREF m_BaseBack;
 };
 
 #endif // WINGLK_WINDOW_H_

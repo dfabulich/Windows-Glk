@@ -43,7 +43,72 @@ CWinGlkWndTextGrid::CWinGlkWndTextGrid(glui32 Rock) : CWinGlkWnd(Rock)
   m_iCurrentStyle = style_Normal;
   m_iCurrentLink = 0;
   m_Styles = m_DefaultTextGridStyles;
+  WinGlkCss::SnapshotWindow(wintype_TextGrid,m_Styles,m_CssHints);
   m_BackColour = (glui32)zcolor_Default;
+}
+
+void CWinGlkWndTextGrid::CssInlineChanged(void)
+{
+  m_InlineCss = CWinGlkCssAttrs();
+  m_InlineCss.Parse(m_CssInline[CSS_Span],false);
+}
+
+bool CWinGlkWndTextGrid::GetWindowBack(DarkMode* dark, COLORREF& Back)
+{
+  if ((m_BackColour != zcolor_Default) || !m_CssHints.m_Back.IsSet())
+    return false;
+  Back = WinGlkCss::Blend(m_CssHints.m_Back.Get(dark != NULL),
+    GetColour(GetStyle(style_Normal)->m_BackColour,dark));
+  return true;
+}
+
+// Grid cells store CSS colours as Gargoyle colours, resolved when the text is written
+CTextColours CWinGlkWndTextGrid::GetCellColours(void)
+{
+  CTextColours Colours = m_CurrentColours;
+  CWinGlkStyle* pStyle = GetStyle(m_iCurrentStyle);
+  if (pStyle == NULL)
+    return Colours;
+
+  DarkMode* dark = DarkMode::GetActive(this);
+  bool bDark = (dark != NULL);
+  COLORREF Under;
+  if (!GetWindowBack(dark,Under))
+    Under = GetColour(pStyle->m_BackColour,dark);
+
+  const CWinGlkCssAttrs& StyleCss = pStyle->m_Css;
+  bool bCssBack = false;
+  if (Colours.back != zcolor_Default)
+    Under = GetColour(Colours.back,dark);
+  else if (StyleCss.m_Back.IsSet())
+  {
+    Under = WinGlkCss::Blend(StyleCss.m_Back.Get(bDark),Under);
+    bCssBack = true;
+  }
+  if (m_InlineCss.m_Back.IsSet())
+  {
+    Under = WinGlkCss::Blend(m_InlineCss.m_Back.Get(bDark),Under);
+    bCssBack = true;
+  }
+  if (bCssBack)
+    Colours.back = (GetRValue(Under)<<16)|(GetGValue(Under)<<8)|GetBValue(Under);
+
+  const CWinGlkCssColour* pFore = NULL;
+  if (m_InlineCss.m_Fore.IsSet())
+    pFore = &m_InlineCss.m_Fore;
+  else if (StyleCss.m_Fore.IsSet() && (Colours.fore == zcolor_Default))
+    pFore = &StyleCss.m_Fore;
+  if (pFore)
+  {
+    COLORREF Fore = WinGlkCss::Blend(pFore->Get(bDark),Under);
+    Colours.fore = (GetRValue(Fore)<<16)|(GetGValue(Fore)<<8)|GetBValue(Fore);
+  }
+
+  if (StyleCss.m_Reverse == 1)
+    Colours.reverse = true;
+  if (m_InlineCss.m_Reverse >= 0)
+    Colours.reverse = (m_InlineCss.m_Reverse == 1);
+  return Colours;
 }
 
 CWinGlkWndTextGrid::~CWinGlkWndTextGrid()
@@ -60,6 +125,10 @@ void CWinGlkWndTextGrid::InitDC(CWinGlkDC& dc, CDC* pdcCompat)
   DarkMode* dark = DarkMode::GetActive(this);
   dc.SetTextColor(pApp->GetSysOrDarkColour(COLOR_WINDOWTEXT,dark));
   dc.SetBkColor(GetColour(GetStyle(style_Normal)->m_BackColour,dark));
+
+  COLORREF WindowBack;
+  if (GetWindowBack(dark,WindowBack))
+    dc.SetBaseBack(true,WindowBack);
 
   dc.SetStyle(style_Normal,false,NULL,dark);
 }
@@ -152,7 +221,7 @@ void CWinGlkWndTextGrid::PutCharacter(glui32 c)
           Row.SetChar(m_iCursorX,(wchar_t)c);
           Row.SetStyle(m_iCursorX,m_iCurrentStyle);
           Row.SetLink(m_iCursorX,m_iCurrentLink);
-          Row.SetColours(m_iCursorX,m_CurrentColours);
+          Row.SetColours(m_iCursorX,GetCellColours());
           m_iCursorX++;
           if (m_iCursorX >= Row.GetLength())
           {
@@ -446,9 +515,13 @@ void CWinGlkWndTextGrid::OnPaint(void)
   // Clear the window
   DarkMode* dark = DarkMode::GetActive(this);
   CWinGlkStyle* pNormal = GetStyle(style_Normal);
-  dcMem.FillSolidRect(ClientArea,GetColour(
-    pNormal->m_ReverseColour ? pNormal->m_TextColour :
-      m_BackColour == zcolor_Default ? pNormal->m_BackColour : m_BackColour,dark));
+  COLORREF WindowBack;
+  if (pNormal->m_ReverseColour || !GetWindowBack(dark,WindowBack))
+  {
+    WindowBack = GetColour(pNormal->m_ReverseColour ? pNormal->m_TextColour :
+      m_BackColour == zcolor_Default ? pNormal->m_BackColour : m_BackColour,dark);
+  }
+  dcMem.FillSolidRect(ClientArea,WindowBack);
 
   // Draw the text
   int y = 0;
@@ -474,6 +547,12 @@ void CWinGlkWndTextGrid::OnPaint(void)
     }
     if (GetActiveWindow() == this)
       SetCaretPos(CPoint(m_iLineX,m_iLineY));
+  }
+
+  if (m_CssHints.m_bBorder)
+  {
+    dcMem.SetStyle(style_Normal,0,NULL,dark);
+    WinGlkCss::FrameRect(dcMem,ClientArea,dcMem.GetTextColor(),dcMem.GetDPI());
   }
 
   dcPaint.BitBlt(0,0,size.cx,size.cy,&dcMem,0,0,SRCCOPY);

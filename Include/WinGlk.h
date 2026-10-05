@@ -57,6 +57,39 @@ void garglk_set_reversevideo_stream(strid_t str, glui32 reverse);
 #define zcolor_Default (-1)
 #define zcolor_Current (-2)
 
+/* CSS Glk extension (Dannii Willis), basic profile. */
+
+#define GLK_MODULE_CSS_BASIC
+#define GLK_MODULE_CSS_SUPPORTS
+#define gestalt_CSSBasic (0x1110)
+#define gestalt_WebBrowser (0x1111)
+#define gestalt_CSSSupports (0x1119)
+
+#define CSS_Span (0)
+#define CSS_Paragraph (1)
+#define CSS_Hyperlink (2)
+#define CSS_Image (3)
+#define CSS_Input (4)
+#define CSS_Window (5)
+
+void glk_css_hint_set(glui32 wintype, glui32 csstarget, glui32 style,
+  const char *prop, glui32 proplen, const char *val, glui32 vallen);
+void glk_css_hint_set_num(glui32 wintype, glui32 csstarget, glui32 style,
+  const char *prop, glui32 proplen, glsi32 val);
+void glk_css_hint_clear(glui32 wintype, glui32 csstarget, glui32 style,
+  const char *prop, glui32 proplen);
+void glk_css_inline_set(glui32 csstarget, const char *prop, glui32 proplen,
+  const char *val, glui32 vallen);
+void glk_css_inline_set_num(glui32 csstarget, const char *prop, glui32 proplen,
+  glsi32 val);
+void glk_css_inline_clear(glui32 csstarget, const char *prop, glui32 proplen);
+void glk_css_hint_clear_all_by_style(glui32 wintype, glui32 style);
+void glk_css_hint_clear_all_by_window(glui32 wintype);
+void glk_css_hint_clear_all_inline(void);
+glui32 glk_css_supports(const char *prop, glui32 proplen,
+  const char *val, glui32 vallen);
+glui32 glk_css_supports_num(const char *prop, glui32 proplen, glsi32 val);
+
 #ifdef __cplusplus
 }
 #endif

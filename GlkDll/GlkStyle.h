@@ -14,6 +14,7 @@ extern "C"
 {
 #include "glk.h"
 }
+#include "GlkCss.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // Classes for Glk styles
@@ -33,6 +34,9 @@ struct CWinGlkStyle
   glsi32 m_TextColour;
   glsi32 m_BackColour;
   glsi32 m_ReverseColour;
+
+  // CSS hints for this style, not saved with the user's settings
+  CWinGlkCssAttrs m_Css;
 
   bool m_bUserControl;
 };

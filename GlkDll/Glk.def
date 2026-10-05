@@ -223,3 +223,16 @@ glkunix_fileref_get_filename          @169
 
 ; Glk 0.7.6 API function
 glk_image_draw_scaled_ext             @170
+
+; CSS Glk extension functions
+glk_css_hint_set                      @171
+glk_css_hint_set_num                  @172
+glk_css_hint_clear                    @173
+glk_css_inline_set                    @174
+glk_css_inline_set_num                @175
+glk_css_inline_clear                  @176
+glk_css_hint_clear_all_by_style       @177
+glk_css_hint_clear_all_by_window      @178
+glk_css_hint_clear_all_inline         @179
+glk_css_supports                      @180
+glk_css_supports_num                  @181

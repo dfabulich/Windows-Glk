@@ -374,7 +374,7 @@ void CGlkApp::LoadInternationalResources(void)
   switch (PRIMARYLANGID(::GetUserDefaultLangID()))
   {
   case LANG_FRENCH:
-    resDllName = "GlkFrançais.dll";
+    resDllName = "GlkFranÃ§ais.dll";
     break;
   case LANG_GERMAN:
     resDllName = "GlkDeutsch.dll";
@@ -386,7 +386,7 @@ void CGlkApp::LoadInternationalResources(void)
     resDllName = "GlkRussian.dll";
     break;
   case LANG_SPANISH:
-    resDllName = "GlkEspañol.dll";
+    resDllName = "GlkEspaÃ±ol.dll";
     break;
   }
 
@@ -1625,6 +1625,12 @@ extern "C" glui32 glk_gestalt_ext(glui32 sel, glui32 val, glui32 *arr, glui32 ar
 
   case gestalt_GarglkText:
     return 1;
+
+  case gestalt_CSSBasic:
+  case gestalt_CSSSupports:
+    return 1;
+  case gestalt_WebBrowser:
+    return 0;
   }
   return 0;
 }
@@ -3510,4 +3516,155 @@ extern "C" void garglk_set_reversevideo_stream(strid_t str, glui32 reverse)
 
   if (CWinGlkStream::IsValidStream((CWinGlkStream*)str))
     ((CWinGlkStream*)str)->SetTextReverse(reverse != 0);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CSS Glk extension
+/////////////////////////////////////////////////////////////////////////////
+
+static bool CssEnabled(void)
+{
+  CGlkApp* pApp = (CGlkApp*)AfxGetApp();
+
+  // Read user settings now, if this has not already been done
+  pApp->ReadSettings();
+  return pApp->GetStyleHints();
+}
+
+// Get the text window that inline CSS applies to, which is that of the current stream
+static CWinGlkWnd* CssCurrentWindow(void)
+{
+  if (!CssEnabled())
+    return NULL;
+
+  CWinGlkStream* pStream = CWinGlkStream::GetCurrentStream();
+  if (!CWinGlkStream::IsValidStream(pStream))
+    return NULL;
+  if (!pStream->IsKindOf(RUNTIME_CLASS(CWinGlkStreamWnd)))
+    return NULL;
+
+  CWinGlkWnd* pWnd = ((CWinGlkStreamWnd*)pStream)->GetWindow();
+  if (!CWinGlkWnd::IsValidWindow(pWnd))
+    return NULL;
+  if (pWnd->IsKindOf(RUNTIME_CLASS(CWinGlkWndTextBuffer)) ||
+    pWnd->IsKindOf(RUNTIME_CLASS(CWinGlkWndTextGrid)))
+    return pWnd;
+  return NULL;
+}
+
+static std::string CssNumber(glsi32 val)
+{
+  char number[16];
+  sprintf(number,"%ld",(long)val);
+  return number;
+}
+
+extern "C" void glk_css_hint_set(glui32 wintype, glui32 csstarget, glui32 style,
+  const char *prop, glui32 proplen, const char *val, glui32 vallen)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  std::string property = WinGlkCss::Lower(WinGlkCss::Trim(WinGlkCss::FromGlk(prop,proplen)));
+  if (property.empty() || !CssEnabled())
+    return;
+  std::string value = WinGlkCss::Trim(WinGlkCss::FromGlk(val,vallen));
+  WinGlkCss::HintSet(wintype,csstarget,style,property,&value);
+}
+
+extern "C" void glk_css_hint_set_num(glui32 wintype, glui32 csstarget, glui32 style,
+  const char *prop, glui32 proplen, glsi32 val)
+{
+  std::string number = CssNumber(val);
+  glk_css_hint_set(wintype,csstarget,style,prop,proplen,number.c_str(),(glui32)number.size());
+}
+
+extern "C" void glk_css_hint_clear(glui32 wintype, glui32 csstarget, glui32 style,
+  const char *prop, glui32 proplen)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  std::string property = WinGlkCss::Lower(WinGlkCss::Trim(WinGlkCss::FromGlk(prop,proplen)));
+  if (property.empty() || !CssEnabled())
+    return;
+  WinGlkCss::HintSet(wintype,csstarget,style,property,NULL);
+}
+
+extern "C" void glk_css_inline_set(glui32 csstarget, const char *prop, glui32 proplen,
+  const char *val, glui32 vallen)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  std::string property = WinGlkCss::Lower(WinGlkCss::Trim(WinGlkCss::FromGlk(prop,proplen)));
+  if (property.empty())
+    return;
+  CWinGlkWnd* pWnd = CssCurrentWindow();
+  if (pWnd)
+  {
+    std::string value = WinGlkCss::Trim(WinGlkCss::FromGlk(val,vallen));
+    pWnd->CssInlineSet(csstarget,property,&value);
+  }
+}
+
+extern "C" void glk_css_inline_set_num(glui32 csstarget, const char *prop, glui32 proplen,
+  glsi32 val)
+{
+  std::string number = CssNumber(val);
+  glk_css_inline_set(csstarget,prop,proplen,number.c_str(),(glui32)number.size());
+}
+
+extern "C" void glk_css_inline_clear(glui32 csstarget, const char *prop, glui32 proplen)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  std::string property = WinGlkCss::Lower(WinGlkCss::Trim(WinGlkCss::FromGlk(prop,proplen)));
+  if (property.empty())
+    return;
+  CWinGlkWnd* pWnd = CssCurrentWindow();
+  if (pWnd)
+    pWnd->CssInlineSet(csstarget,property,NULL);
+}
+
+extern "C" void glk_css_hint_clear_all_by_style(glui32 wintype, glui32 style)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  if (CssEnabled())
+    WinGlkCss::HintClearAllByStyle(wintype,style);
+}
+
+extern "C" void glk_css_hint_clear_all_by_window(glui32 wintype)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  if (CssEnabled())
+    WinGlkCss::HintClearAllByWindow(wintype);
+}
+
+extern "C" void glk_css_hint_clear_all_inline(void)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  CWinGlkWnd* pWnd = CssCurrentWindow();
+  if (pWnd)
+  {
+    pWnd->CssInlineClearAll();
+
+    // Also clear the Gargoyle text formatting extensions
+    garglk_set_reversevideo(0);
+    garglk_set_zcolors((glui32)zcolor_Default,(glui32)zcolor_Default);
+  }
+}
+
+extern "C" glui32 glk_css_supports(const char *prop, glui32 proplen,
+  const char *val, glui32 vallen)
+{
+  AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+  return WinGlkCss::Supports(WinGlkCss::FromGlk(prop,proplen),WinGlkCss::FromGlk(val,vallen)) ? 1 : 0;
+}
+
+extern "C" glui32 glk_css_supports_num(const char *prop, glui32 proplen, glsi32 val)
+{
+  std::string number = CssNumber(val);
+  return glk_css_supports(prop,proplen,number.c_str(),(glui32)number.size());
 }

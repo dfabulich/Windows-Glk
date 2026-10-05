@@ -39,6 +39,7 @@ CWinGlkGraphic::CWinGlkGraphic()
   m_ScaleWidth = 1.0;
   m_ScaleHeight = 1.0;
   m_MaxWidth = 1.0;
+  m_bCssBorder = false;
 };
 
 CWinGlkGraphic::~CWinGlkGraphic()

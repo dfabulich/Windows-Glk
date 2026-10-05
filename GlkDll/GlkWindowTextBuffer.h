@@ -81,6 +81,11 @@ public:
   void SetNextEchoInput(bool bNext) { m_bNextEchoInput = bNext; }
 
 protected:
+  virtual void CssInlineChanged(void);
+  void UpdateCss(void);
+  bool GetWindowBack(DarkMode* dark, COLORREF& Back);
+
+protected:
   //{{AFX_MSG(CWinGlkWndTextBuffer)
   afx_msg void OnPaint();
   afx_msg LRESULT OnSpeedTestLine(WPARAM, LPARAM);
@@ -159,7 +164,8 @@ protected:
   class CParagraph
   {
   public:
-    CParagraph(int iStyle, unsigned int iLink, CTextColours* pColours);
+    CParagraph(int iStyle, unsigned int iLink, CTextColours* pColours,
+      CWinGlkCssAttrs* pCss, CWinGlkCssAttrs* pParaCss);
     ~CParagraph();
 
     void AddCharacter(wchar_t c);
@@ -168,9 +174,12 @@ protected:
     void SetInitialStyle(int iStyle);
     void SetInitialLink(unsigned int iLink);
     void SetInitialColours(const CTextColours& colours);
+    void SetInitialCss(const CWinGlkCssAttrs& css);
+    void SetParaCss(const CWinGlkCssAttrs& css);
     void AddStyleChange(int iStyle);
     void AddLinkChange(unsigned int iLink);
     void AddColourChange(const CTextColours& colours);
+    void AddCssChange(const CWinGlkCssAttrs& css);
 
     bool ClearFormatting(void);
     void SetGraphicSize(CWinGlkGraphic* pGraphic, CRect* pWindowSize);
@@ -205,6 +214,7 @@ protected:
       InlineGraphic,
       MarginGraphic,
       FlowBreak,
+      CssChange,
     };
 
   protected:
@@ -215,9 +225,24 @@ protected:
       CStringW m_Text;
     };
 
+    // Paragraph layout from the initial style and paragraph level CSS
+    struct CLayout
+    {
+      int m_iIndent1;
+      int m_iIndent2;
+      int m_iIndentRight;
+      int m_iMarginLeft;
+      int m_iMarginRight;
+      int m_iJustify;
+      bool m_bBorder;
+      bool m_bHasBack;
+      COLORREF m_Back;
+    };
+
   protected:
+    void GetLayout(CPaintInfo& Info, CLayout& Layout);
     bool TestLineLength(CPaintInfo& Info, CStringW& strLine,
-      CSize& Size, int& iLeftEdge, int iIndent, bool bFinal,
+      CSize& Size, int& iLeftEdge, int iIndent, int iRightIndent, bool bFinal,
       int& iIndex, int& iLastBreak, int& iLastPossible,
       int& iLastLength, int& iMaxUp, int& iMaxDown, bool& bExit,
       CArray<int,int>& MarginIndexes);
@@ -233,10 +258,13 @@ protected:
     CArray<CWinGlkGraphic*,CWinGlkGraphic*> m_InlineGraphics;
     CArray<CWinGlkGraphic*,CWinGlkGraphic*> m_MarginGraphics;
     CArray<CTextColours*,CTextColours*> m_TextColours;
+    CArray<CWinGlkCssAttrs*,CWinGlkCssAttrs*> m_CssAttrs;
     CArray<CTextOut,CTextOut&> m_TextOut;
     int m_iInitialStyle;
     unsigned int m_iInitialLink;
     CTextColours* m_pInitialColours;
+    CWinGlkCssAttrs* m_pInitialCss;
+    CWinGlkCssAttrs* m_pParaCss;
     int m_iLastShown;
     bool m_bSpoken;
     bool m_bHadInput;
@@ -269,6 +297,9 @@ protected:
   int m_iCurrentStyle;
   unsigned int m_iCurrentLink;
   CTextColours m_CurrentColours;
+  CWinGlkCssAttrs m_CurrentCss;
+  CWinGlkCssAttrs m_CurrentParaCss;
+  CWinGlkCssWindowHints m_CssHints;
   glui32 m_BackColour;
   bool m_bCheckDeleteText;
   bool m_bMorePending;

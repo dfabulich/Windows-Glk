@@ -71,6 +71,11 @@ protected:
   DECLARE_MESSAGE_MAP()
 
 protected:
+  virtual void CssInlineChanged(void);
+  bool GetWindowBack(DarkMode* dark, COLORREF& Back);
+  CTextColours GetCellColours(void);
+
+protected:
   class CGridCellInfo
   {
   public:
@@ -126,6 +131,8 @@ protected:
   int m_iCurrentStyle;
   unsigned int m_iCurrentLink;
   CTextColours m_CurrentColours;
+  CWinGlkCssAttrs m_InlineCss;
+  CWinGlkCssWindowHints m_CssHints;
   glui32 m_BackColour;
 
 public:
@@ -151,6 +158,7 @@ public:
   virtual void SetFontStyles(LOGFONT& Font);
   virtual int GetStyleFontSize(void) const;
   virtual bool UseFontSubstitution(void) const;
+  virtual bool UseCss(void) const { return false; }
 
 protected:
   int m_iSize;

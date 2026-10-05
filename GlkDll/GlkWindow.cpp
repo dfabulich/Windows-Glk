@@ -103,6 +103,24 @@ glui32 CWinGlkWnd::GetRock(void)
   return m_Rock;
 }
 
+void CWinGlkWnd::CssInlineSet(glui32 target, const std::string& prop, const std::string* pVal)
+{
+  if (target >= CSS_Window)
+    return;
+  if (pVal)
+    m_CssInline[target][prop] = *pVal;
+  else
+    m_CssInline[target].erase(prop);
+  CssInlineChanged();
+}
+
+void CWinGlkWnd::CssInlineClearAll(void)
+{
+  for (int i = 0; i < CSS_Window; i++)
+    m_CssInline[i].clear();
+  CssInlineChanged();
+}
+
 CWinGlkWndPair* CWinGlkWnd::GetParentWnd(void)
 {
   return m_pParentWnd;
@@ -1186,8 +1204,11 @@ CWinGlkDC::CWinGlkDC(CWinGlkWnd* pWnd) : m_Display(style_Normal,0,NULL)
   m_pOldFont = NULL;
   memset(&m_FontMetrics,0,sizeof(TEXTMETRIC));
 
-  for (int i = 0; i < style_NUMSTYLES * 2; i++)
-    m_Fonts[i] = NULL;
+  m_bReversed = false;
+  m_bSpanBorder = false;
+  m_dFontPixels = 0.0;
+  m_bHasBaseBack = false;
+  m_BaseBack = 0;
 }
 
 CWinGlkDC::~CWinGlkDC()
@@ -1195,26 +1216,25 @@ CWinGlkDC::~CWinGlkDC()
   if (m_pOldFont)
     SelectObject(m_pOldFont);
 
-  for (int i = 0; i < style_NUMSTYLES * 2; i++)
-  {
-    if (m_Fonts[i])
-      delete m_Fonts[i];
-  }
+  for (std::map<CString,CFont*>::iterator it = m_Fonts.begin(); it != m_Fonts.end(); ++it)
+    delete it->second;
 }
 
 CWinGlkDC::CDisplay::CDisplay()
 {
   m_iStyle = 0;
   m_iLink = 0;
-  m_iIndex = 0;
+  m_pColours = NULL;
+  m_pCss = NULL;
 }
 
-CWinGlkDC::CDisplay::CDisplay(int iStyle, unsigned int iLink, const CTextColours* pColours)
+CWinGlkDC::CDisplay::CDisplay(int iStyle, unsigned int iLink, const CTextColours* pColours,
+  const CWinGlkCssAttrs* pCss)
 {
   m_iStyle = iStyle;
   m_iLink = iLink;
   m_pColours = pColours;
-  m_iIndex = (iStyle * 2) + ((iLink != 0) ? 1 : 0);
+  m_pCss = pCss;
 }
 
 bool CWinGlkDC::CDisplay::operator==(const CDisplay& Compare)
@@ -1224,6 +1244,8 @@ bool CWinGlkDC::CDisplay::operator==(const CDisplay& Compare)
   if (m_iLink != Compare.m_iLink)
     return false;
   if (m_pColours != Compare.m_pColours)
+    return false;
+  if (m_pCss != Compare.m_pCss)
     return false;
   return true;
 }
@@ -1239,6 +1261,24 @@ void CWinGlkDC::SetStyle(int iStyle, unsigned int iLink, const CTextColours* pCo
   SetDisplay(Display,dark);
 }
 
+void CWinGlkDC::SetStyle(int iStyle, unsigned int iLink, const CTextColours* pColours,
+  const CWinGlkCssAttrs* pCss, DarkMode* dark)
+{
+  CDisplay Display(iStyle,iLink,pColours,pCss);
+  SetDisplay(Display,dark);
+}
+
+int CWinGlkDC::GetDPI(void) const
+{
+  return m_pWnd ? DPI::getWindowDPI(m_pWnd) : DPI::getSystemDPI();
+}
+
+void CWinGlkDC::SetBaseBack(bool bHasBack, COLORREF Back)
+{
+  m_bHasBaseBack = bHasBack;
+  m_BaseBack = Back;
+}
+
 void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
 {
   CGlkApp* pApp = (CGlkApp*)AfxGetApp();
@@ -1252,45 +1292,82 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
   else
     m_Style.SetStyle(style_Normal);
 
-  // Is there already a font previously allocated for this style?
-  if (m_Fonts[m_Display.m_iIndex])
-    m_pFont = m_Fonts[m_Display.m_iIndex];
+  // CSS from the style's hints, and then from the text run
+  static const CWinGlkCssAttrs NoCss;
+  bool bCss = UseCss();
+  const CWinGlkCssAttrs& StyleCss = bCss ? m_Style.m_Css : NoCss;
+  const CWinGlkCssAttrs& RunCss = (bCss && m_Display.m_pCss) ? *m_Display.m_pCss : NoCss;
+  CWinGlkCssAttrs Css(StyleCss);
+  Css.Overlay(RunCss);
+
+  CString name = GetFontName();
+
+  LOGFONT TextLogFont = { 0 };
+  SetFontStyles(TextLogFont);
+
+  if (m_Display.m_iLink != 0)
+    TextLogFont.lfUnderline = TRUE;
+
+  int iPointSize = pApp->GetFontPointSize();
+  int iStyleSize = GetStyleFontSize();
+  double dPointInc = iPointSize*fabs((double)iStyleSize)*0.1;
+  if (dPointInc < 1.0)
+    dPointInc = 1.0;
+  if (iStyleSize > 0)
+    iPointSize += (int)ceil(dPointInc);
+  else if (iStyleSize < 0)
+    iPointSize -= (int)ceil(dPointInc);
+  if (iPointSize < 4)
+    iPointSize = 4;
+  double dPoints = iPointSize;
+
+  if (bCss)
+  {
+    double dMedium = pApp->GetFontPointSize();
+    if (StyleCss.m_Size.IsSet())
+      dPoints = StyleCss.m_Size.Resolve(dPoints,dMedium);
+    if (RunCss.m_Size.IsSet())
+      dPoints = RunCss.m_Size.Resolve(dPoints,dMedium);
+    if (dPoints < 1.0)
+      dPoints = 1.0;
+
+    if (Css.m_Bold >= 0)
+      TextLogFont.lfWeight = Css.m_Bold ? FW_BOLD : FW_NORMAL;
+    if (Css.m_Italic >= 0)
+      TextLogFont.lfItalic = Css.m_Italic ? TRUE : FALSE;
+    if (Css.m_Underline >= 0)
+      TextLogFont.lfUnderline = Css.m_Underline ? TRUE : FALSE;
+    if (!Css.m_Family.IsEmpty())
+    {
+      CString face;
+      bool bMono = false;
+      if (WinGlkCss::ResolveFamily(Css.m_Family,face,bMono))
+        name = face;
+    }
+  }
+
+  strncpy(TextLogFont.lfFaceName,(LPCSTR)name,LF_FACESIZE-1);
+  TextLogFont.lfHeight = -(int)floor((dPoints*GetDPI()/72.0)+0.5);
+  m_dFontPixels = -TextLogFont.lfHeight;
+
+  // Is there already a font previously allocated for these settings?
+  CString key;
+  key.Format("%s|%d|%d|%d|%d",(LPCSTR)name,(int)TextLogFont.lfHeight,(int)TextLogFont.lfWeight,
+    (int)TextLogFont.lfItalic,(int)TextLogFont.lfUnderline);
+  std::map<CString,CFont*>::const_iterator it = m_Fonts.find(key);
+  if (it != m_Fonts.end())
+    m_pFont = it->second;
   else
   {
-    CString name = GetFontName();
-
-    LOGFONT TextLogFont = { 0 };
-    strncpy(TextLogFont.lfFaceName,(LPCSTR)name,LF_FACESIZE);
-    SetFontStyles(TextLogFont);
-
-    if (m_Display.m_iLink != 0)
-      TextLogFont.lfUnderline = TRUE;
-
     TextLogFont.lfCharSet = ANSI_CHARSET;
     TextLogFont.lfOutPrecision = OUT_TT_PRECIS;
     TextLogFont.lfClipPrecision = CLIP_DEFAULT_PRECIS;
     TextLogFont.lfQuality = PROOF_QUALITY;
     TextLogFont.lfPitchAndFamily = DEFAULT_PITCH|FF_DONTCARE;
 
-    int iPointSize = pApp->GetFontPointSize();
-    int iStyleSize = GetStyleFontSize();
-    double dPointInc = iPointSize*fabs((double)iStyleSize)*0.1;
-    if (dPointInc < 1.0)
-      dPointInc = 1.0;
-    if (iStyleSize > 0)
-      iPointSize += (int)ceil(dPointInc);
-    else if (iStyleSize < 0)
-      iPointSize -= (int)ceil(dPointInc);
-    if (iPointSize < 4)
-      iPointSize = 4;
-    if (m_pWnd)
-      TextLogFont.lfHeight = -MulDiv(iPointSize,DPI::getWindowDPI(m_pWnd),72);
-    else
-      TextLogFont.lfHeight = -MulDiv(iPointSize,DPI::getSystemDPI(),72);
-
     m_pFont = new CFont;
     m_pFont->CreateFontIndirect(&TextLogFont);
-    m_Fonts[m_Display.m_iIndex] = m_pFont;
+    m_Fonts[key] = m_pFont;
   }
 
   if (m_pOldFont)
@@ -1301,15 +1378,42 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
   // Get the metrics of the currently selected font
   GetTextMetrics(&m_FontMetrics);
 
-  // Set the text and background colours
+  // Set the text and background colours. The precedence, from lowest to highest, is
+  // stylehints, the style's CSS hints, Gargoyle colours, then inline CSS.
+  bool bDark = (dark != NULL);
   CTextColours overColours;
   if (m_Display.m_pColours != NULL)
     overColours = *(m_Display.m_pColours);
-  COLORREF BackColour = CWinGlkWnd::GetColour(
-    overColours.back == zcolor_Default ? m_Style.m_BackColour : overColours.back,dark);
+
+  COLORREF BackColour;
+  if ((overColours.back == zcolor_Default) && (m_Style.m_BackColour == WINGLK_COLOUR_BACK) && m_bHasBaseBack)
+    BackColour = m_BaseBack;
+  else
+  {
+    BackColour = CWinGlkWnd::GetColour(
+      overColours.back == zcolor_Default ? m_Style.m_BackColour : overColours.back,dark);
+  }
+  if (StyleCss.m_Back.IsSet() && (overColours.back == zcolor_Default))
+    BackColour = WinGlkCss::Blend(StyleCss.m_Back.Get(bDark),BackColour);
+  if (RunCss.m_Back.IsSet())
+    BackColour = WinGlkCss::Blend(RunCss.m_Back.Get(bDark),BackColour);
+
   COLORREF TextColour = CWinGlkWnd::GetColour(
     overColours.fore == zcolor_Default ? m_Style.m_TextColour : overColours.fore,dark);
-  if (m_Style.m_ReverseColour || overColours.reverse)
+  if (RunCss.m_Fore.IsSet())
+    TextColour = WinGlkCss::Blend(RunCss.m_Fore.Get(bDark),BackColour);
+  else if (StyleCss.m_Fore.IsSet() && (overColours.fore == zcolor_Default))
+    TextColour = WinGlkCss::Blend(StyleCss.m_Fore.Get(bDark),BackColour);
+
+  m_bReversed = (m_Style.m_ReverseColour != 0);
+  if (StyleCss.m_Reverse >= 0)
+    m_bReversed = (StyleCss.m_Reverse != 0);
+  if (overColours.reverse)
+    m_bReversed = true;
+  if (RunCss.m_Reverse >= 0)
+    m_bReversed = (RunCss.m_Reverse != 0);
+
+  if (m_bReversed)
   {
     SetTextColor(BackColour);
     SetBkColor(TextColour);
@@ -1319,9 +1423,11 @@ void CWinGlkDC::SetDisplay(const CDisplay& Display, DarkMode* dark)
     SetTextColor(TextColour);
     SetBkColor(BackColour);
   }
-  if (m_Display.m_iLink != 0)
+  if ((m_Display.m_iLink != 0) && !RunCss.m_Fore.IsSet())
     SetTextColor(CWinGlkWnd::GetColour(pApp->GetLinkColour(),dark));
   SetBkMode(OPAQUE);
+
+  m_bSpanBorder = (Css.m_SpanBorder == 1);
 }
 
 CWinGlkStyle* CWinGlkDC::GetStyleFromWindow(int iStyle)
