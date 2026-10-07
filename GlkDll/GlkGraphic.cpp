@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #include "StdAfx.h"
+#include "GlkGraphicGIF.h"
 #include "GlkGraphicJPEG.h"
 #include "GlkGraphicPNG.h"
 
@@ -58,6 +59,7 @@ void CWinGlkGraphicLoader::InitLoaders(void)
 {
   m_Loaders.Add(new CWinGlkJPEGGraphicLoader());
   m_Loaders.Add(new CWinGlkPNGGraphicLoader());
+  m_Loaders.Add(new CWinGlkGIFGraphicLoader());
 }
 
 // Delete the loaders

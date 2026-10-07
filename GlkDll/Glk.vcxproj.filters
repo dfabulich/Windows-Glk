@@ -58,6 +58,9 @@
     <ClCompile Include="GlkGraphic.cpp">
       <Filter>Windows Glk\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GlkGraphicGIF.cpp">
+      <Filter>Windows Glk\Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="GlkGraphicJPEG.cpp">
       <Filter>Windows Glk\Source Files</Filter>
     </ClCompile>
@@ -385,6 +388,9 @@
       <Filter>Windows Glk\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlkGraphic.h">
+      <Filter>Windows Glk\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlkGraphicGIF.h">
       <Filter>Windows Glk\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlkGraphicJPEG.h">
