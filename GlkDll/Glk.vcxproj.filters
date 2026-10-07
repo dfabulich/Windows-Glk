@@ -88,6 +88,9 @@
     <ClCompile Include="GlkSoundSONG.cpp">
       <Filter>Windows Glk\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GlkSoundWAV.cpp">
+      <Filter>Windows Glk\Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="GlkStream.cpp">
       <Filter>Windows Glk\Source Files</Filter>
     </ClCompile>
@@ -418,6 +421,9 @@
       <Filter>Windows Glk\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlkSoundSONG.h">
+      <Filter>Windows Glk\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlkSoundWAV.h">
       <Filter>Windows Glk\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlkStream.h">
